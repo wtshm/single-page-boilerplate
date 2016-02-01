@@ -1,0 +1,27 @@
+{
+  "paths": {
+    "src": "./src/",
+    "dest": "./dist/",
+    "tmp": "./.tmp/",
+    "images": {
+      "src": "./src/images/",
+      "dest": "./dist/images/",
+      "tmp": "./.tmp/images/"
+    },
+    "scripts": {
+      "src": "./src/scripts/",
+      "dest": "./dist/scripts/",
+      "tmp": "./.tmp/scripts/"
+    },
+    "styles": {
+      "src": "./src/styles/",
+      "dest": "./dist/styles/",
+      "tmp": "./.tmp/styles/"
+    },
+    "views": {
+      "src": "./src/",
+      "dest": "./dist/",
+      "tmp": "./.tmp/"
+    }
+  }
+}
