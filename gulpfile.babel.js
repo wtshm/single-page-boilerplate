@@ -5,11 +5,13 @@ import del from 'del';
 import runSequence from 'run-sequence';
 import browserSync from 'browser-sync';
 import gulpLoadPlugins from 'gulp-load-plugins';
+import mainBowerFiles from 'main-bower-files';
 import config from './config.json';
 
 const $ = gulpLoadPlugins();
 const reload = browserSync.reload;
 const paths = config.paths;
+const externals = config.externals;
 
 // Lint JavaScript
 gulp.task('lint', () => {
@@ -26,23 +28,17 @@ gulp.task('images', () => {
             progressive: true,
             interlaced: true
         })))
-        .pipe($.size({
-            title: 'images'
-        }))
-        .pipe(gulp.dest(paths.images.dest));
+        .pipe(gulp.dest(paths.images.tmp));
 });
 
 // Copy all files at the root level
 gulp.task('copy', () => {
     return gulp.src([
-            paths.src + '*',
-            '!' + paths.src + '*.ejs'
+            paths.tmp + '*',
+            '!' + paths.tmp + '*.ejs'
         ], {
             dot: true
         })
-        .pipe($.size({
-            title: 'copy'
-        }))
         .pipe(gulp.dest(paths.dest));
 });
 
@@ -50,64 +46,28 @@ gulp.task('copy', () => {
 gulp.task('sass', () => {
     return gulp.src(paths.styles.src + '**/*.scss')
         .pipe($.newer(paths.styles.tmp))
-        //.pipe($.sourcemaps.init())
-        .pipe($.sass({
-            style: 'expanded',
-            compass: true
-        })).on('error', $.sass.logError)
+        .pipe($.sass())
         .pipe(gulp.dest(paths.styles.tmp));
 });
 
 // Optimize stylesheets
 gulp.task('pleeease', () => {
-    return gulp.src(paths.styles.tmp + '**/*.css')
+    return gulp.src([paths.styles.tmp + '**/*.css'])
         .pipe($.pleeease({
             autoprefixer: {
                 browsers: ["last 4 versions"]
             },
-            minifier: true,
-            out: 'main.min.css'
+            minifier: false
         }))
-        .pipe($.size({
-            title: 'styles'
-        }))
-        //.pipe($.sourcemaps.write('./'))
-        .pipe(gulp.dest(paths.styles.dest));
-});
-
-gulp.task('styles', () => {
-    return runSequence(
-        'sass', 'pleeease'
-    );
+        .pipe(gulp.dest(paths.styles.tmp));
 });
 
 // Transpile ES2015 code to ES5
 gulp.task('babel', () => {
-    return gulp.src(paths.scripts.src + '**/*.js')
+    return gulp.src([paths.scripts.src + '**/*.js'])
         .pipe($.newer(paths.scripts.tmp))
-        .pipe($.sourcemaps.init())
         .pipe($.babel())
-        .pipe($.sourcemaps.write())
         .pipe(gulp.dest(paths.scripts.tmp));
-});
-
-gulp.task('uglify', () => {
-    return gulp.src(paths.scripts.tmp + '**/*.js')
-        .pipe($.concat('main.min.js'))
-        .pipe($.uglify({
-            preserveComments: 'some'
-        }))
-        .pipe($.size({
-            title: 'scripts'
-        }))
-        .pipe($.sourcemaps.write('.'))
-        .pipe(gulp.dest(paths.scripts.dest));
-});
-
-gulp.task('scripts', () => {
-    return runSequence(
-        'babel', 'uglify'
-    );
 });
 
 // Compile EJS
@@ -116,7 +76,7 @@ gulp.task('ejs', () => {
             paths.views.src + '**/*.ejs',
             '!' + paths.views.src + '**/_*.ejs'
         ])
-        .pipe($.newer(paths.scripts.tmp))
+        .pipe($.newer(paths.views.tmp))
         .pipe($.ejs())
         .pipe($.rename({
             extname: '.html'
@@ -124,10 +84,19 @@ gulp.task('ejs', () => {
         .pipe(gulp.dest(paths.views.tmp));
 });
 
-// Optimize HTML
-gulp.task('htmlmin', () => {
-    return gulp.src(paths.views.tmp + '**/*.html')
-        .pipe($.useref({searchPath: '{' + paths.tmp + ',' + paths.src + '}'}))
+// Optimize HTML & build
+gulp.task('build', () => {
+    return gulp.src([paths.views.tmp + '**/*.html'])
+        .pipe($.usemin({
+            css: [$.pleeease({
+                minifier: true
+            })],
+            css_vendor: [$.pleeease({
+                minifier: true
+            })],
+            js: [$.uglify()],
+            js_vendor: [$.uglify()]
+        }))
         .pipe($.if('*.html', $.htmlmin({
             removeComments: true,
             collapseWhitespace: true,
@@ -139,17 +108,22 @@ gulp.task('htmlmin', () => {
             removeStyleLinkTypeAttributes: true,
             removeOptionalTags: true
         })))
-        .pipe($.size({
-            title: 'views',
-            showFiles: true
-        }))
         .pipe(gulp.dest(paths.views.dest));
 });
 
-gulp.task('views', () => {
-    return runSequence(
-        'ejs', 'htmlmin'
-    );
+// Inject vendor libraries
+gulp.task('bower', () => {
+    const vendors = gulp.src(mainBowerFiles(), {
+        read: false
+    });
+
+    return gulp.src(paths.views.tmp + '**/*.html')
+        .pipe($.inject(vendors, {
+            relative: true
+        }), {
+            name: 'bower'
+        })
+        .pipe(gulp.dest(paths.views.tmp));
 });
 
 // Clean output directory
@@ -167,20 +141,19 @@ gulp.task('clean', () => {
 gulp.task('serve', () => {
     browserSync({
         notify: false,
-        //server: [paths.tmp, paths.src],
         server: paths.dest,
         port: 3000
     });
 
-    gulp.watch([paths.views.src + '**/*.ejs'], ['views', reload]);
-    gulp.watch([paths.styles.src + '**/*.{scss,css}'], ['styles', reload]);
-    gulp.watch([paths.scripts.src + '**/*.js'], ['lint', 'scripts', reload]);
+    gulp.watch([paths.views.src + '**/*.ejs'], ['ejs', 'bower', 'build', reload]);
+    gulp.watch([paths.styles.src + '**/*.{scss,css}'], ['sass', 'pleeease', reload]);
+    gulp.watch([paths.scripts.src + '**/*.js'], ['lint', 'babel', reload]);
     gulp.watch([paths.images.src + '**/*'], reload);
 });
 
 // Build production files, the default task
 gulp.task('default', ['clean'], callback => {
     return runSequence(
-        'styles', 'lint', 'scripts', 'views', 'images', 'copy', 'serve', callback
+        'sass', 'pleeease', 'lint', 'babel', 'ejs', 'bower', 'images', 'copy', 'build', 'serve', callback
     );
 });

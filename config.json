@@ -4,19 +4,19 @@
     "dest": "./dist/",
     "tmp": "./.tmp/",
     "images": {
-      "src": "./src/images/",
-      "dest": "./dist/images/",
-      "tmp": "./.tmp/images/"
+      "src": "./src/assets/images/",
+      "dest": "./dist/assets/images/",
+      "tmp": "./.tmp/assets/images/"
     },
     "scripts": {
-      "src": "./src/scripts/",
-      "dest": "./dist/scripts/",
-      "tmp": "./.tmp/scripts/"
+      "src": "./src/assets/scripts/",
+      "dest": "./dist/assets/scripts/",
+      "tmp": "./.tmp/assets/scripts/"
     },
     "styles": {
-      "src": "./src/styles/",
-      "dest": "./dist/styles/",
-      "tmp": "./.tmp/styles/"
+      "src": "./src/assets/styles/",
+      "dest": "./dist/assets/styles/",
+      "tmp": "./.tmp/assets/styles/"
     },
     "views": {
       "src": "./src/",
