@@ -20,6 +20,7 @@
     "gulp-load-plugins": "^1.2.0",
     "gulp-newer": "^1.1.0",
     "gulp-pleeease": "^2.0.2",
+    "gulp-plumber": "^1.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-sass": "^2.1.1",
     "gulp-sourcemaps": "^1.6.0",
@@ -27,6 +28,7 @@
     "gulp-usemin": "^0.3.20",
     "imagemin-pngquant": "^4.2.0",
     "main-bower-files": "^2.11.1",
+    "minimist": "^1.2.0",
     "run-sequence": "^1.1.5"
   },
   "eslintConfig": {
