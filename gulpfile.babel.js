@@ -12,93 +12,121 @@ const reload = browserSync.reload;
 const paths = config.paths;
 
 // Lint JavaScript
-gulp.task('lint', () =>
-    gulp.src(paths.scripts.src + '**/*.js')
+gulp.task('lint', () => {
+    return gulp.src(paths.scripts.src + '**/*.js')
         .pipe($.eslint())
         .pipe($.eslint.format())
-        .pipe($.if(!browserSync.active, $.eslint.failOnError()))
-);
+        .pipe($.if(!browserSync.active, $.eslint.failOnError()));
+});
 
-// Optimaze images
-gulp.task('images', () =>
-    gulp.src(paths.images.src + '**/*')
+// Optimize images
+gulp.task('images', () => {
+    return gulp.src(paths.images.src + '**/*')
         .pipe($.cache($.imagemin({
             progressive: true,
             interlaced: true
         })))
-        .pipe($.size({title: 'images'}))
-        .pipe(gulp.dest(paths.images.dest))
-);
+        .pipe($.size({
+            title: 'images'
+        }))
+        .pipe(gulp.dest(paths.images.dest));
+});
 
 // Copy all files at the root level
-gulp.task('copy', () =>
-    gulp.src([
+gulp.task('copy', () => {
+    return gulp.src([
             paths.src + '*',
             '!' + paths.src + '*.ejs'
         ], {
             dot: true
         })
-        .pipe($.size({title: 'copy'}))
-        .pipe(gulp.dest(paths.dest))
-);
+        .pipe($.size({
+            title: 'copy'
+        }))
+        .pipe(gulp.dest(paths.dest));
+});
 
-// Compile CSS
-gulp.task('styles', () =>
-    gulp.src([
-            paths.styles.src + '**/*.scss',
-            paths.styles.src + '**/*.css'
-        ])
+// Compile Sass
+gulp.task('sass', () => {
+    return gulp.src(paths.styles.src + '**/*.scss')
         .pipe($.newer(paths.styles.tmp))
-        .pipe($.sourcemaps.init())
+        //.pipe($.sourcemaps.init())
         .pipe($.sass({
             style: 'expanded',
             compass: true
         })).on('error', $.sass.logError)
-        .pipe(gulp.dest(paths.styles.tmp))
+        .pipe(gulp.dest(paths.styles.tmp));
+});
+
+// Optimize stylesheets
+gulp.task('pleeease', () => {
+    return gulp.src(paths.styles.tmp + '**/*.css')
         .pipe($.pleeease({
             autoprefixer: {
-                browsers: ["> 1%", "last 4 versions"],
-                cascade: true
+                browsers: ["last 4 versions"]
             },
-            minifier: true
+            minifier: true,
+            out: 'main.min.css'
         }))
-        .pipe($.rename({
-            suffix: '.min',
-            extname: '.css'
+        .pipe($.size({
+            title: 'styles'
         }))
-        .pipe($.size({title: 'styles'}))
-        .pipe($.sourcemaps.write('./'))
-        .pipe(gulp.dest(paths.styles.dest))
-);
+        //.pipe($.sourcemaps.write('./'))
+        .pipe(gulp.dest(paths.styles.dest));
+});
 
-// Transpile JavaScript
-gulp.task('scripts', () =>
-    gulp.src([
-            paths.scripts.src + '**/*.js'
-        ])
+gulp.task('styles', () => {
+    return runSequence(
+        'sass', 'pleeease'
+    );
+});
+
+// Transpile ES2015 code to ES5
+gulp.task('babel', () => {
+    return gulp.src(paths.scripts.src + '**/*.js')
         .pipe($.newer(paths.scripts.tmp))
         .pipe($.sourcemaps.init())
         .pipe($.babel())
         .pipe($.sourcemaps.write())
-        .pipe(gulp.dest(paths.scripts.tmp))
-        .pipe($.concat('main.min.js'))
-        .pipe($.uglify({preserveComments: 'some'}))
-        .pipe($.size({title: 'scripts'}))
-        .pipe($.sourcemaps.write('.'))
-        .pipe(gulp.dest(paths.scripts.dest))
-);
+        .pipe(gulp.dest(paths.scripts.tmp));
+});
 
-// Compile HTML
-gulp.task('templates', () =>
-    gulp.src([
+gulp.task('uglify', () => {
+    return gulp.src(paths.scripts.tmp + '**/*.js')
+        .pipe($.concat('main.min.js'))
+        .pipe($.uglify({
+            preserveComments: 'some'
+        }))
+        .pipe($.size({
+            title: 'scripts'
+        }))
+        .pipe($.sourcemaps.write('.'))
+        .pipe(gulp.dest(paths.scripts.dest));
+});
+
+gulp.task('scripts', () => {
+    return runSequence(
+        'babel', 'uglify'
+    );
+});
+
+// Compile EJS
+gulp.task('ejs', () => {
+    return gulp.src([
             paths.views.src + '**/*.ejs',
             '!' + paths.views.src + '**/_*.ejs'
         ])
+        .pipe($.newer(paths.scripts.tmp))
         .pipe($.ejs())
         .pipe($.rename({
             extname: '.html'
         }))
-        .pipe(gulp.dest(paths.views.tmp))
+        .pipe(gulp.dest(paths.views.tmp));
+});
+
+// Optimize HTML
+gulp.task('htmlmin', () => {
+    return gulp.src(paths.views.tmp + '**/*.html')
         .pipe($.useref({searchPath: '{' + paths.tmp + ',' + paths.src + '}'}))
         .pipe($.if('*.html', $.htmlmin({
             removeComments: true,
@@ -111,36 +139,48 @@ gulp.task('templates', () =>
             removeStyleLinkTypeAttributes: true,
             removeOptionalTags: true
         })))
-        .pipe($.size({title: 'templates', showFiles: true}))
-        .pipe(gulp.dest(paths.views.dest))
-);
+        .pipe($.size({
+            title: 'views',
+            showFiles: true
+        }))
+        .pipe(gulp.dest(paths.views.dest));
+});
+
+gulp.task('views', () => {
+    return runSequence(
+        'ejs', 'htmlmin'
+    );
+});
 
 // Clean output directory
-gulp.task('clean', () =>
-    del([
+gulp.task('clean', () => {
+    return del([
         paths.tmp,
-        paths.dest + '*',
+        paths.dest,
         '!' + paths.dest + '.git'
-    ], {dot: true})
-);
+    ], {
+        dot: true
+    });
+});
 
 // Watch files for changes & reload
-gulp.task('watch', () => {
+gulp.task('serve', () => {
     browserSync({
         notify: false,
+        //server: [paths.tmp, paths.src],
         server: paths.dest,
         port: 3000
     });
 
-    gulp.watch([paths.views.src + '**/*.ejs'], ['templates', reload]);
+    gulp.watch([paths.views.src + '**/*.ejs'], ['views', reload]);
     gulp.watch([paths.styles.src + '**/*.{scss,css}'], ['styles', reload]);
     gulp.watch([paths.scripts.src + '**/*.js'], ['lint', 'scripts', reload]);
     gulp.watch([paths.images.src + '**/*'], reload);
 });
 
 // Build production files, the default task
-gulp.task('default', ['clean'], callback =>
-    runSequence(
-        'styles', 'lint', 'templates', 'scripts', 'images', 'copy', 'watch', callback
-    )
-);
+gulp.task('default', ['clean'], callback => {
+    return runSequence(
+        'styles', 'lint', 'scripts', 'views', 'images', 'copy', 'serve', callback
+    );
+});
