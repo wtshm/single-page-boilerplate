@@ -4,6 +4,12 @@
   "authors": [
     "Kenta Watashima <kenta@prty.jp>"
   ],
+  "dependencies": {
+    "jquery": "^2.2.0",
+    "normalize-css": "normalize.css#^3.0.3",
+    "skeleton": "^2.0.4",
+    "font-awesome": "fontawesome#^4.5.0"
+  },
   "ignore": [
     "**/.*",
     "node_modules",
@@ -14,5 +20,12 @@
   "license": "MIT",
   "moduleType": [
     "es6"
-  ]
+  ],
+  "overrides": {
+    "font-awesome": {
+      "main": [
+        "./css/font-awesome.css"
+      ]
+    }
+  }
 }

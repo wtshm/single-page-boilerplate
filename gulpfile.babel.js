@@ -7,101 +7,112 @@ import browserSync from 'browser-sync';
 import gulpLoadPlugins from 'gulp-load-plugins';
 import mainBowerFiles from 'main-bower-files';
 import minimist from 'minimist';
+import browserify from 'browserify';
+import babelify from 'babelify';
+import debowerify from 'debowerify';
+import source from 'vinyl-source-stream';
+import buffer from 'vinyl-buffer';
+import fs from 'fs';
 import config from './config.json';
 
 const $ = gulpLoadPlugins();
 const reload = browserSync.reload;
 const paths = config.paths;
-const externals = config.externals;
-const knownOptions = {
-    string: 'env',
-    default: {
-        env: process.env.NODE_ENV || 'development'
-    }
-};
+const knownOptions = {string: 'env', default: {env: process.env.NODE_ENV || 'development'}};
 const options = minimist(process.argv.slice(2), knownOptions);
 
-// Lint JavaScript
-gulp.task('lint', () => {
-    return gulp.src(paths.scripts.src + '**/*.js')
-        .pipe($.eslint())
-        .pipe($.eslint.format())
-        .pipe($.if(!browserSync.active, $.eslint.failOnError()));
-});
-
 // Optimize images
-gulp.task('images', () => {
-    return gulp.src(paths.images.src + '**/*')
+gulp.task('images', () =>
+    gulp.src(paths.images.src + '**/*')
         .pipe($.cache($.imagemin({
             progressive: true,
             interlaced: true
         })))
-        .pipe(gulp.dest(paths.images.tmp));
-});
+        .pipe(gulp.dest(paths.images.dest))
+);
 
-// Copy all files at the root level
-gulp.task('copy', () => {
-    return gulp.src([
-            paths.tmp + '*',
-            '!' + paths.tmp + '*.ejs'
-        ], { dot: true })
-        .pipe(gulp.dest(paths.dest));
-});
+// Copy static files
+gulp.task('copy', () =>
+    gulp.src([paths.bowerComponents + 'font-awesome/fonts/**.*'])
+        .pipe(gulp.dest(paths.fonts.dest))
+);
 
 // Compile Sass
-gulp.task('sass', () => {
-    return gulp.src(paths.styles.src + '**/*.scss')
-        .pipe($.plumber())
-        .pipe($.newer(paths.styles.tmp))
+gulp.task('sass', () =>
+    gulp.src(paths.styles.src + '**/*.scss')
+        .pipe($.plumber({errorHandler: error => $.notify('sass', error)}))
+        .pipe($.newer(paths.styles.dest))
+        .pipe($.concat('main.css'))
         .pipe($.sass())
-        .pipe(gulp.dest(paths.styles.tmp));
+        .pipe($.plumber.stop())
+        .pipe(gulp.dest(paths.styles.dest))
+);
+
+// Concatenate bower components
+gulp.task('bower', () => {
+    let bowerPaths = mainBowerFiles('**/*.css');
+    bowerPaths.push(paths.styles.dest + '**/*.css');
+    gulp.src(bowerPaths)
+        .pipe($.concat('main.css'))
+        .pipe(gulp.dest(paths.styles.dest));
 });
 
 // Optimize stylesheets
-gulp.task('pleeease', () => {
-    return gulp.src([paths.styles.tmp + '**/*.css'])
-        .pipe($.pleeease({
+gulp.task('pleeease', () =>
+    gulp.src(paths.styles.dest + '**/*.css')
+        .pipe($.plumber({errorHandler: error => $.notify('pleeease', error)}))
+        .pipe($.if(options.env === 'production', $.pleeease({
+            autoprefixer: {
+                browsers: ["> 1%", "last 4 versions"],
+                cascade: true
+            },
+            minifier: {
+                removeAllComments: true
+            }
+        })), $.pleeease({
             autoprefixer: {
                 browsers: ["> 1%", "last 4 versions"],
                 cascade: true
             },
             minifier: false
         }))
-        .pipe(gulp.dest(paths.styles.tmp));
-});
+        .pipe($.plumber.stop())
+        .pipe(gulp.dest(paths.styles.dest))
+);
 
-// Transpile ES2015 code to ES5
-gulp.task('babel', () => {
-    return gulp.src([paths.scripts.src + '**/*.js'])
-        .pipe($.plumber())
-        .pipe($.newer(paths.scripts.tmp))
-        .pipe($.babel())
-        .pipe(gulp.dest(paths.scripts.tmp));
-});
+
+// Lint JavaScript
+gulp.task('lint', () =>
+    gulp.src(paths.scripts.src + '**/*.js')
+        .pipe($.eslint())
+        .pipe($.eslint.format())
+        .pipe($.if(!browserSync.active, $.eslint.failOnError()))
+);
+
+// Transpile ES2015 to ES5
+gulp.task('browserify', () =>
+    browserify(paths.scripts.src + 'main.js')
+        .transform(babelify, {presets: ['es2015']})
+        .transform(debowerify)
+        .bundle()
+        .on('error', error => $.notify('babelify', error))
+        .pipe(source('main.js'))
+        .pipe(buffer())
+        .pipe($.if(options.env === 'production', $.uglify()))
+        .pipe(gulp.dest(paths.scripts.dest))
+);
 
 // Compile EJS
-gulp.task('ejs', () => {
-    return gulp.src([
-            paths.views.src + '**/*.ejs',
-            '!' + paths.views.src + '**/_*.ejs'
+gulp.task('ejs', () =>
+    gulp.src([
+            paths.templates.src + '*.ejs',
+            '!' + paths.templates.src + '**/_*.ejs'
         ])
         .pipe($.plumber())
-        .pipe($.newer(paths.views.tmp))
-        .pipe($.ejs())
-        .pipe($.rename({ extname: '.html' }))
-        .pipe(gulp.dest(paths.views.tmp));
-});
-
-// Optimize HTML & build
-gulp.task('build', () => {
-    return gulp.src([paths.views.tmp + '**/*.html'])
-        .pipe($.usemin({
-            css:        [$.if(options.env === 'production', $.pleeease({ minifier: true }), $.pleeease({ minifier: false }))],
-            css_vendor: [$.if(options.env === 'production', $.pleeease({ minifier: true }), $.pleeease({ minifier: false }))],
-            js:         [$.if(options.env === 'production', $.uglify())],
-            js_vendor:  [$.if(options.env === 'production', $.uglify())]
-        }))
-        .pipe($.if(options.env === 'production', $.if('*.html', $.htmlmin({
+        .pipe($.newer(paths.templates.dest))
+        .pipe($.ejs(JSON.parse(fs.readFileSync('./config.json'))))
+        .pipe($.rename({extname: '.html'}))
+        .pipe($.if(options.env === 'production', $.htmlmin({
             removeComments: true,
             collapseWhitespace: true,
             collapseBooleanAttributes: true,
@@ -111,26 +122,17 @@ gulp.task('build', () => {
             removeScriptTypeAttributes: true,
             removeStyleLinkTypeAttributes: true,
             removeOptionalTags: true
-        }))))
-        .pipe(gulp.dest(paths.views.dest));
-});
-
-// Inject vendor libraries
-gulp.task('bower', () => {
-    const vendors = gulp.src(mainBowerFiles(), { read: false });
-    return gulp.src(paths.views.tmp + '**/*.html')
-        .pipe($.inject(vendors, { relative: true }), { name: 'bower' })
-        .pipe(gulp.dest(paths.views.tmp));
-});
+        })))
+        .pipe(gulp.dest(paths.templates.dest))
+);
 
 // Clean output directory
-gulp.task('clean', () => {
-    return del([
-        paths.tmp,
+gulp.task('clean', () =>
+    del([
         paths.dest,
         '!' + paths.dest + '.git'
-    ], { dot: true });
-});
+    ], {dot: true})
+);
 
 // Watch files for changes & reload
 gulp.task('watch', () => {
@@ -138,18 +140,18 @@ gulp.task('watch', () => {
         notify: false,
         server: paths.dest,
         port: 3000,
-        stream: true
+        open: false
     });
 
-    gulp.watch([paths.views.src + '**/*.ejs'], () => runSequence('ejs', 'bower', 'build', reload));
-    gulp.watch([paths.styles.src + '**/*.{scss,css}'], () => runSequence('sass', 'pleeease', 'build', reload));
-    gulp.watch([paths.scripts.src + '**/*.js'], () => runSequence('lint', 'babel', 'build', reload));
-    gulp.watch([paths.images.src + '**/*'], reload);
+    gulp.watch([paths.templates.src + '**/*.ejs', './config.json'], () => runSequence('ejs', reload));
+    gulp.watch([paths.styles.src + '**/*.{scss,css}'], () => runSequence('sass', 'pleeease', reload));
+    gulp.watch([paths.scripts.src + '**/*.js'], () => runSequence('lint', 'browserify', reload));
+    gulp.watch([paths.images.src + '**/*'], () => runSequence('images', reload));
 });
 
 // Build production files, the default task
-gulp.task('default', ['clean'], callback => {
-    return runSequence(
-        'sass', 'pleeease', 'lint', 'babel', 'ejs', 'bower', 'images', 'copy', 'build', 'watch', callback
-    );
-});
+gulp.task('default', ['clean'], callback =>
+    runSequence(
+        'sass', 'bower', 'pleeease', 'lint', 'browserify', 'ejs', 'images', 'copy', 'watch', callback
+    )
+);

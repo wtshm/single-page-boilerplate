@@ -1,0 +1,24 @@
+<meta charset="UTF-8">
+<meta name="description" content="">
+<meta name="author" content="">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<meta name="format-detection" content="telephone=no">
+<% if (global.themeColor) { %><meta name="theme-color" content="<%= global.themeColor %>"><% } %>
+
+<%# ref.) https://developers.facebook.com/tools/debug/ %>
+<% if (socials.facebook.appId) { %><meta property="fb:app_id" content="<%= socials.facebook.appId %>"><% } %>
+<% if (socials.title) { %><meta property="og:title" content="<%= socials.title %>"><% } %>
+<% if (socials.description) { %><meta property="og:description" content="<%= socials.description %>"><% } %>
+<% if (socials.image) { %><meta property="og:image" content="<%= socials.image %>"><% } %>
+<% if (socials.facebook.type) { %><meta property="og:type" content="<%= socials.facebook.type %>"><% } %>
+<% if (socials.facebook.url) { %><meta property="og:url" content="<%= socials.facebook.url %>"><% } %>
+<% if (socials.facebook.siteName) { %><meta property="og:site_name" content="<%= socials.facebook.siteName %>"><% } %>
+
+<%# ref.) https://cards-dev.twitter.com/validator %>
+<% if (socials.twitter.card) { %><meta property="twitter:card" content="<%= socials.twitter.card %>"><% } %>
+<% if (socials.title) { %><meta property="twitter:title" content="<%= socials.title %>"><% } %>
+<% if (socials.description) { %><meta property="twitter:description" content="<%= socials.description %>"><% } %>
+<% if (socials.image) { %><meta property="twitter:image:src" content="<%= socials.image %>"><% } %>
+<% if (socials.twitter.site) { %><meta property="twitter:site" content="<%= socials.twitter.site %>"><% } %>
+
+<link rel="icon" href="./assets/images/favicon.ico">

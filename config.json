@@ -1,27 +1,49 @@
 {
+  "global": {
+    "sitename": "",
+    "description": "",
+    "keywords": "",
+    "year": "",
+    "themeColor": ""
+  },
+  "socials": {
+    "title": "",
+    "description": "",
+    "image": "",
+    "twitter": {
+      "card": "summary_large_image",
+      "site": ""
+    },
+    "facebook": {
+      "appId": "",
+      "type": "",
+      "url": "",
+      "siteName": ""
+    }
+  },
   "paths": {
     "src": "./src/",
     "dest": "./dist/",
-    "tmp": "./.tmp/",
-    "images": {
-      "src": "./src/assets/images/",
-      "dest": "./dist/assets/images/",
-      "tmp": "./.tmp/assets/images/"
-    },
+    "bowerComponents": "./bower_components/",
     "scripts": {
-      "src": "./src/assets/scripts/",
-      "dest": "./dist/assets/scripts/",
-      "tmp": "./.tmp/assets/scripts/"
+      "src": "./src/scripts/",
+      "dest": "./dist/assets/scripts/"
     },
     "styles": {
-      "src": "./src/assets/styles/",
-      "dest": "./dist/assets/styles/",
-      "tmp": "./.tmp/assets/styles/"
+      "src": "./src/styles/",
+      "dest": "./dist/assets/styles/"
     },
-    "views": {
-      "src": "./src/",
-      "dest": "./dist/",
-      "tmp": "./.tmp/"
+    "templates": {
+      "src": "./src/templates/",
+      "dest": "./dist/"
+    },
+    "images": {
+      "src": "./src/resources/images/",
+      "dest": "./dist/assets/images/"
+    },
+    "fonts": {
+      "src": "./src/resources/fonts/",
+      "dest": "./dist/assets/fonts/"
     }
   }
 }
