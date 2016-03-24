@@ -1,4 +1,1 @@
-# Installation
-```
-npm i && bower i
-```
+# boilerplate
