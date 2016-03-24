@@ -5,15 +5,14 @@ import del from 'del';
 import runSequence from 'run-sequence';
 import browserSync from 'browser-sync';
 import gulpLoadPlugins from 'gulp-load-plugins';
-import mainBowerFiles from 'main-bower-files';
 import minimist from 'minimist';
 import browserify from 'browserify';
 import babelify from 'babelify';
-import debowerify from 'debowerify';
 import source from 'vinyl-source-stream';
 import buffer from 'vinyl-buffer';
 import fs from 'fs';
 import config from './config.json';
+import pngquant from 'imagemin-pngquant';
 
 const $ = gulpLoadPlugins();
 const reload = browserSync.reload;
@@ -26,16 +25,28 @@ gulp.task('images', () =>
     gulp.src(paths.images.src + '**/*')
         .pipe($.cache($.imagemin({
             progressive: true,
-            interlaced: true
+            svgoPlugins: [{removeViewBox: false}],
+            use: [pngquant()]
         })))
         .pipe(gulp.dest(paths.images.dest))
 );
 
-// Copy static files
-gulp.task('copy', () =>
-    gulp.src([paths.bowerComponents + 'font-awesome/fonts/**.*'])
-        .pipe(gulp.dest(paths.fonts.dest))
-);
+// Copy assets
+gulp.task('copy', () => {
+    gulp.src(paths.fonts.src + '**/*')
+        .pipe(gulp.dest(paths.fonts.dest));
+    gulp.src(['./node_modules/font-awesome/fonts/**.*'])
+        .pipe(gulp.dest(paths.fonts.dest));
+    gulp.src(paths.locales.src + '**/*')
+        .pipe(gulp.dest(paths.locales.dest));
+    gulp.src([
+            './node_modules/normalize.css/normalize.css'
+        ])
+        .pipe($.pleeease({
+            minifier: true
+        }))
+        .pipe(gulp.dest(paths.styles.dest));
+});
 
 // Compile Sass
 gulp.task('sass', () =>
@@ -47,15 +58,6 @@ gulp.task('sass', () =>
         .pipe($.plumber.stop())
         .pipe(gulp.dest(paths.styles.dest))
 );
-
-// Concatenate bower components
-gulp.task('bower', () => {
-    let bowerPaths = mainBowerFiles('**/*.css');
-    bowerPaths.push(paths.styles.dest + '**/*.css');
-    gulp.src(bowerPaths)
-        .pipe($.concat('main.css'))
-        .pipe(gulp.dest(paths.styles.dest));
-});
 
 // Optimize stylesheets
 gulp.task('pleeease', () =>
@@ -91,11 +93,13 @@ gulp.task('lint', () =>
 
 // Transpile ES2015 to ES5
 gulp.task('browserify', () =>
-    browserify(paths.scripts.src + 'main.js')
+    browserify([paths.scripts.src + 'main.js'])
         .transform(babelify, {presets: ['es2015']})
-        .transform(debowerify)
+        .transform({
+            global: true
+        }, 'browserify-shim')
         .bundle()
-        .on('error', error => $.notify('babelify', error))
+        //.on('error', error => $.notify('babelify', error))
         .pipe(source('main.js'))
         .pipe(buffer())
         .pipe($.if(options.env === 'production', $.uglify()))
@@ -110,7 +114,7 @@ gulp.task('ejs', () =>
         ])
         .pipe($.plumber())
         .pipe($.newer(paths.templates.dest))
-        .pipe($.ejs(JSON.parse(fs.readFileSync('./config.json'))))
+        .pipe($.ejs(JSON.parse(fs.readFileSync('./meta.json'))))
         .pipe($.rename({extname: '.html'}))
         .pipe($.if(options.env === 'production', $.htmlmin({
             removeComments: true,
@@ -147,11 +151,13 @@ gulp.task('watch', () => {
     gulp.watch([paths.styles.src + '**/*.{scss,css}'], () => runSequence('sass', 'pleeease', reload));
     gulp.watch([paths.scripts.src + '**/*.js'], () => runSequence('lint', 'browserify', reload));
     gulp.watch([paths.images.src + '**/*'], () => runSequence('images', reload));
+    gulp.watch([paths.fonts.src + '**/*'], () => runSequence('copy', reload));
+    gulp.watch([paths.locales.src + '**/*'], () => runSequence('copy', reload));
 });
 
 // Build production files, the default task
 gulp.task('default', ['clean'], callback =>
     runSequence(
-        'sass', 'bower', 'pleeease', 'lint', 'browserify', 'ejs', 'images', 'copy', 'watch', callback
+        'sass', 'pleeease', 'lint', 'browserify', 'ejs', 'images', 'copy', 'watch', callback
     )
 );

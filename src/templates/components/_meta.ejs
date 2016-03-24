@@ -1,6 +1,6 @@
 <meta charset="UTF-8">
-<meta name="description" content="">
-<meta name="author" content="">
+<% if (global.description) { %><meta name="description" content="<%= global.description %>"><% } %>
+<% if (global.author) { %><meta name="author" content="<%= global.author %>"><% } %>
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <meta name="format-detection" content="telephone=no">
 <% if (global.themeColor) { %><meta name="theme-color" content="<%= global.themeColor %>"><% } %>
