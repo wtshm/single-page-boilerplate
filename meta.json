@@ -1,0 +1,24 @@
+{
+  "global": {
+    "sitename": "",
+    "description": "",
+    "keywords": "",
+    "year": "",
+    "themeColor": ""
+  },
+  "socials": {
+    "title": "",
+    "description": "",
+    "image": "",
+    "twitter": {
+      "card": "summary_large_image",
+      "site": ""
+    },
+    "facebook": {
+      "appId": "",
+      "type": "",
+      "url": "",
+      "siteName": ""
+    }
+  }
+}
