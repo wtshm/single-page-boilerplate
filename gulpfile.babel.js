@@ -7,9 +7,9 @@ import browserSync from 'browser-sync';
 import gulpLoadPlugins from 'gulp-load-plugins';
 import minimist from 'minimist';
 import browserify from 'browserify';
-import babelify from 'babelify';
-import source from 'vinyl-source-stream';
-import buffer from 'vinyl-buffer';
+//import babelify from 'babelify';
+import vinylSourceStream from 'vinyl-source-stream';
+import vinylBuffer from 'vinyl-buffer';
 import fs from 'fs';
 import config from './config.json';
 import pngquant from 'imagemin-pngquant';
@@ -82,7 +82,6 @@ gulp.task('pleeease', () =>
         .pipe(gulp.dest(paths.styles.dest))
 );
 
-
 // Lint JavaScript
 gulp.task('lint', () =>
     gulp.src(paths.scripts.src + '**/*.js')
@@ -92,19 +91,34 @@ gulp.task('lint', () =>
 );
 
 // Transpile ES2015 to ES5
-gulp.task('browserify', () =>
-    browserify([paths.scripts.src + 'main.js'])
-        .transform(babelify, {presets: ['es2015']})
-        .transform({
-            global: true
+//gulp.task('browserify', () => {
+//    return browserify([paths.scripts.src + 'main.js'])
+//        .transform(babelify, {presets: ['es2015']})
+//        .transform({
+//            global: true
+//        }, 'browserify-shim')
+//        .bundle()
+//        //.on('error', error => $.notify('babelify', error))
+//        .pipe(vinylSourceStream('main.js'))
+//        .pipe(vinylBuffer())
+//        .pipe($.if(options.env === 'production', $.uglify()))
+//        .pipe(gulp.dest(paths.scripts.dest))
+//});
+
+// Compile TypeScript to ES5
+gulp.task('tsify', () => {
+    return browserify()
+        .add([paths.scripts.src + 'main.ts'])
+        .plugin('tsify', {
+            target: 'ES5',
+            removeComments: true
         }, 'browserify-shim')
         .bundle()
-        //.on('error', error => $.notify('babelify', error))
-        .pipe(source('main.js'))
-        .pipe(buffer())
+        .pipe(vinylSourceStream('main.js'))
+        .pipe(vinylBuffer())
         .pipe($.if(options.env === 'production', $.uglify()))
-        .pipe(gulp.dest(paths.scripts.dest))
-);
+        .pipe(gulp.dest(paths.scripts.dest));
+});
 
 // Compile EJS
 gulp.task('ejs', () =>
@@ -149,7 +163,7 @@ gulp.task('watch', () => {
 
     gulp.watch([paths.templates.src + '**/*.ejs', './config.json'], () => runSequence('ejs', reload));
     gulp.watch([paths.styles.src + '**/*.{scss,css}'], () => runSequence('sass', 'pleeease', reload));
-    gulp.watch([paths.scripts.src + '**/*.js'], () => runSequence('lint', 'browserify', reload));
+    gulp.watch([paths.scripts.src + '**/*.ts'], () => runSequence('lint', 'tsify', reload));
     gulp.watch([paths.images.src + '**/*'], () => runSequence('images', reload));
     gulp.watch([paths.fonts.src + '**/*'], () => runSequence('copy', reload));
     gulp.watch([paths.locales.src + '**/*'], () => runSequence('copy', reload));
@@ -158,6 +172,6 @@ gulp.task('watch', () => {
 // Build production files, the default task
 gulp.task('default', ['clean'], callback =>
     runSequence(
-        'sass', 'pleeease', 'lint', 'browserify', 'ejs', 'images', 'copy', 'watch', callback
+        'sass', 'pleeease', 'lint', 'tsify', 'ejs', 'images', 'copy', 'watch', callback
     )
 );
