@@ -1,0 +1,32 @@
+{
+  "header": {
+    "title": "boilerplate",
+    "description": "description"
+  },
+  "nav": {
+    "home": "home",
+    "section-1": "Section 1",
+    "section-2": "Section 2",
+    "section-3": "Section 3",
+    "section-4": "Section 4"
+  },
+  "footer": {
+
+  },
+  "section-1": {
+    "title": "Section 1",
+    "description": "description"
+  },
+  "section-2": {
+    "title": "Section 2",
+    "description": "description"
+  },
+  "section-3": {
+    "title": "Section 3",
+    "description": "description"
+  },
+  "section-4": {
+    "title": "Section 4",
+    "description": "description"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "header": {
+    "title": "ボイラープレート",
+    "description": "説明"
+  },
+  "nav": {
+    "home": "ホーム",
+    "section-1": "セクション 1",
+    "section-2": "セクション 2",
+    "section-3": "セクション 3",
+    "section-4": "セクション 4"
+  },
+  "footer": {
+
+  },
+  "section-1": {
+    "title": "セクション 1",
+    "description": "説明"
+  },
+  "section-2": {
+    "title": "セクション 2",
+    "description": "説明"
+  },
+  "section-3": {
+    "title": "セクション 3",
+    "description": "説明"
+  },
+  "section-4": {
+    "title": "セクション 4",
+    "description": "説明"
+  }
+}
