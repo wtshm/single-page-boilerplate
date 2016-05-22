@@ -141,6 +141,7 @@ gulp.task('ejs', () =>
         //    removeStyleLinkTypeAttributes: true,
         //    removeOptionalTags: true
         //})))
+        .pipe($.removeEmptyLines())
         .pipe($.plumber.stop())
         .pipe(gulp.dest(paths.templates.dest))
 );

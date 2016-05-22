@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <%- include components/_meta %>
-    <title><%= global.sitename %></title>
-    <link href="./assets/styles/normalize.css" rel="stylesheet">
-    <link href="./assets/styles/main.css" rel="stylesheet">
+<%- include components/_meta %>
+<!-- build:css ./assets/styles/main.css -->
+<link href="../node_modules/normalize.css/normalize.css" rel="stylesheet">
+<link href="./assets/styles/main.css" rel="stylesheet">
+<!-- endbuild -->
 </head>
 <body>
-    <%- include components/_header %>
-    <%- include components/_nav %>
-    <%- include components/_footer %>
+<%- include components/_header %>
+<%- include components/_nav %>
+<%- include components/_footer %>
 </body>
+<script>(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,'script','//www.google-analytics.com/analytics.js','ga');ga('create', '<%= global.ga %>', 'auto');ga('send', 'pageview');</script>
 <script src="./assets/scripts/main.js"></script>
 </html>
