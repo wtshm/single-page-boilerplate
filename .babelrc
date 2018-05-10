@@ -1,5 +1,8 @@
 {
-  "presets": ["es2015"],
-  //"only": "gulpfile.babel.js",
-  "retainLines": true
+  "presets": [
+    "es2015",
+    "stage-1"
+  ],
+  "plugins": [
+  ]
 }
