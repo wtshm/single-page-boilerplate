@@ -18,7 +18,6 @@ let config = {
     output: {
         path: paths.dist,
         filename: 'assets/scripts/main.js',
-        publicPath: '/'
     },
 
     devServer: {
@@ -46,13 +45,16 @@ let config = {
                             options: {
                                 plugins: () => {
                                     return [
+                                        require('postcss-calc'),
+                                        require('postcss-image-set-polyfill'),
                                         require('autoprefixer')({ browsers: 'last 2 versions' })
                                     ]
                                 }
                             }
                         },
                         'sass-loader',
-                    ]
+                    ],
+                    publicPath: '../../'
                 })
             },
             {
@@ -130,6 +132,9 @@ let config = {
         new webpack.ProvidePlugin({
             $: 'jquery',
             jQuery: 'jquery'
+        }),
+        new webpack.DefinePlugin({
+            config: JSON.stringify(require('./config.json'))
         })
     ]
 };
