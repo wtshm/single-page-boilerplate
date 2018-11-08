@@ -7,4 +7,4 @@ class Main {
 
 }
 
-module.exports = new Main();
+export default Main;
