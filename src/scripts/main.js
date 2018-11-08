@@ -1,5 +1,4 @@
 import '../styles/main.sass';
-import $ from 'jquery';
 
 class Main {
 

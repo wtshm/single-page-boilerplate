@@ -1,16 +1,17 @@
 const webpack = require('webpack');
 const path = require('path');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const BrowserSyncPlugin = require('browser-sync-webpack-plugin');
-const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const UglifyJSPlugin = require('uglifyjs-webpack-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 const paths = {
     src: path.join(__dirname, 'src'),
     dist: path.join(__dirname, 'dist')
 };
 
-let config = {
+module.exports = (env, argv) => ({
     context: paths.src,
 
     entry: path.join(paths.src, 'scripts/main.js'),
@@ -32,30 +33,20 @@ let config = {
             {
                 test: /\.js$/,
                 exclude: /node_modules/,
-                use: 'babel-loader'
+                use: {
+                    loader: 'babel-loader',
+                    options: {
+                    }
+                }
             },
             {
                 test: /\.sass$/,
-                use: ExtractTextPlugin.extract({
-                    fallback: 'style-loader',
-                    use: [
-                        'css-loader',
-                        {
-                            loader: 'postcss-loader',
-                            options: {
-                                plugins: () => {
-                                    return [
-                                        require('postcss-calc'),
-                                        require('postcss-image-set-polyfill'),
-                                        require('autoprefixer')({ browsers: 'last 2 versions' })
-                                    ]
-                                }
-                            }
-                        },
-                        'sass-loader',
-                    ],
-                    publicPath: '../../'
-                })
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    'css-loader',
+                    'postcss-loader',
+                    'sass-loader',
+                ]
             },
             {
                 test: /\.pug$/,
@@ -83,7 +74,7 @@ let config = {
                                 interlaced: false,
                             },
                             optipng: {
-                                optimizationLevel: process.env.NODE_ENV === 'production' ? 7 : 1,
+                                optimizationLevel: argv.mode === 'production' ? 7 : 1,
                             },
                             pngquant: {
                                 quality: '75-90',
@@ -118,8 +109,25 @@ let config = {
         ]
     },
 
+    optimization: {
+        minimizer: argv.mode === 'production' ? [
+            new UglifyJSPlugin({
+                cache: true,
+                parallel: true,
+                uglifyOptions: {
+                    compress: {
+                        drop_console: true
+                    },
+                    output: {
+                        comments: /^\**!|@preserve|@license|@cc_on/
+                    },
+                }
+            }),
+            new OptimizeCSSAssetsPlugin({}),
+        ] : []
+    },
+
     plugins: [
-        new ExtractTextPlugin('assets/styles/style.css'),
         new BrowserSyncPlugin({
             server: {
                 baseDir: paths.dist
@@ -129,6 +137,9 @@ let config = {
             title: 'boilerplate',
             template: 'templates/index.pug'
         }),
+        new MiniCssExtractPlugin({
+            filename: "assets/styles/style.css"
+        }),
         new webpack.ProvidePlugin({
             $: 'jquery',
             jQuery: 'jquery'
@@ -137,11 +148,4 @@ let config = {
             config: JSON.stringify(require('./config.json'))
         })
     ]
-};
-
-if (process.env.NODE_ENV === 'production') {
-    config.plugins.push(new UglifyJSPlugin());
-    config.plugins.push(new webpack.optimize.AggressiveMergingPlugin());
-}
-
-module.exports = config;
+});
