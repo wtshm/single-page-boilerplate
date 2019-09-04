@@ -26,8 +26,6 @@ module.exports = (env, argv) => ({
         port: 3000
     },
 
-    devtool: 'source-map',
-
     module: {
         rules: [
             {
